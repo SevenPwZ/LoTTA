@@ -1,6 +1,6 @@
-# MCM: Masked Cell Modeling for Anomaly Detection In Tabular Data
+# LoTTA: Low-rank Test-time Adaptation for Unsupervised Tabular Anomaly Detection
 
-This code is the official implementation of the paper: [MCM: Masked Cell Modeling for Anomaly Detection in Tabular Data](https://openreview.net/forum?id=lNZJyEDxy4) published at ICLR 2024 as a conference paper by Jiaxin Yin, Yuanyuan Qiao, Zitang Zhou, Xiangchao Wang, and Jie Yang. The code allows the users to reproduce and extend the results reported in the study. Please cite the above paper when reporting, reproducing or extending the results.
+The code of paper "LoTTA: Low-rank Test-time Adaptation for Unsupervised Tabular Anomaly Detection"
 
 
 ## Prepare dataset
@@ -10,15 +10,4 @@ This code is the official implementation of the paper: [MCM: Masked Cell Modelin
    4) You can download tabular datasets from [ODDS](https://odds.cs.stonybrook.edu/) and [ADBench](https://github.com/Minqi824/ADBench) for testing.
 
 ## Run
-Run `main.py` to start training and testing the model. Results will be automatically stored in `./results`.
-
-
-## Requirements
-```
-- Python 3.6
-- PyTorch 1.10.2
-- torchvision 0.11.3
-- numpy 1.23.5
-- pandas 1.5.3
-- scipy 1.10.1
-```
+Run `main.py` to start training and testing the model. Results will be automatically stored in `./output`.
