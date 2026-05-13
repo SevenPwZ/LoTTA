@@ -48,19 +48,15 @@ class CDTL(nn.Module):
         self.decoder = nn.Sequential(*decoder)
 
     def forward(self, x_input):
-        # 掩码数据x_mask
         x_mask, masks = self.mask_model(x_input)
-        # 对齐维度原始数据x_multi
         x_multi = x_input.unsqueeze(1).repeat(1, self.mask_num, 1)
         B, T, D = x_mask.shape
         x_mask = x_mask.reshape(B*T, D)
         x_multi = x_multi.reshape(B * T, D)
 
-        # 输入到encoder中
         z_x = self.encoder(x_multi)
         z = self.encoder(x_mask)
 
-        # 将encoder的输出作为两个decoder分别的输入
         z_x_pred = self.ssl_model(z_x)
         x_pred = self.decoder(z)
 

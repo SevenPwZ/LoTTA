@@ -10,13 +10,11 @@ class MMDTestVisualizer:
         self.device = device
 
     def _gaussian_kernel_matrix(self, X, sigma):
-        """计算完整核矩阵 N×N"""
         XX = (X**2).sum(dim=1, keepdim=True)
         dists = XX - 2 * X @ X.t() + XX.t()
         return torch.exp(-dists / (2 * sigma**2))
 
     def _compute_mmd_from_kernel(self, K, idx_s, idx_t):
-        """从预计算核矩阵 K 提取子矩阵计算 MMD"""
         n, m = len(idx_s), len(idx_t)
         Kxx = K[idx_s][:, idx_s]
         Kyy = K[idx_t][:, idx_t]
@@ -30,7 +28,6 @@ class MMDTestVisualizer:
         return mmd
 
     def _auto_select_sigmas(self, X):
-        """自动根据中位数距离生成多尺度 sigma"""
         with torch.no_grad():
             XX = (X**2).sum(dim=1, keepdim=True)
             dists = XX - 2 * X @ X.t() + XX.t()
@@ -42,7 +39,6 @@ class MMDTestVisualizer:
         X_t = X_t.dataset.data[X_t.indices]
         X_t = X_t.data.to(self.device)
 
-        # 转换为 tensor 并标准化
         X_s = torch.tensor(X_s, dtype=torch.float32, device=self.device)
         X_t = torch.tensor(X_t, dtype=torch.float32, device=self.device)
         X_all = torch.cat([X_s, X_t], dim=0)
@@ -52,21 +48,16 @@ class MMDTestVisualizer:
         idx_s = torch.arange(0, n_s, device=self.device)
         idx_t = torch.arange(n_s, X_all.shape[0], device=self.device)
 
-        # 自动选择 sigma
         sigmas = self.sigmas or self._auto_select_sigmas(X_all)
 
-        # 聚合多带宽结果
         def aggregate_mmd(idx_s, idx_t, K_list):
             mmd_vals = [self._compute_mmd_from_kernel(K, idx_s, idx_t) for K in K_list]
             return torch.stack(mmd_vals).max()
 
-        # 预计算所有 sigma 的核矩阵
         K_list = [self._gaussian_kernel_matrix(X_all, sigma) for sigma in sigmas]
 
-        # 真实 MMD 统计量
         stat_obs = aggregate_mmd(idx_s, idx_t, K_list)
 
-        # 置换检验
         perm_stats = []
         for _ in range(self.num_permutations):
             idx_perm = torch.randperm(X_all.shape[0], device=self.device)
@@ -81,7 +72,6 @@ class MMDTestVisualizer:
         return p_value.item()
 
     def plot_kde(self, X_s, X_t, feature_idx=0):
-        """绘制单维特征核密度对比图"""
         X_s = np.array(X_s)
         X_t = np.array(X_t)
         xs = X_s[:, feature_idx]

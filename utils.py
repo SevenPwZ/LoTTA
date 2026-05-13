@@ -9,13 +9,9 @@ from Model.LoRALinear import LoRALinear
 
 
 def inject_lora_to_encoder(model, r, alpha):
-    """
-    仅对 model.encoder 内的 Linear 层注入 LoRA
-    """
     for name, module in model.encoder.named_children():
         # print(f"[LoRA] Replacing {name} Linear: in={module.in_features}, out={module.out_features}")
         if isinstance(module, nn.Linear):
-            # 替换为 LoRALinear
             new_module = LoRALinear(
                 module.in_features,
                 module.out_features,
@@ -25,9 +21,7 @@ def inject_lora_to_encoder(model, r, alpha):
             )
             setattr(model.encoder, name, new_module)
         elif isinstance(module, nn.Sequential) or isinstance(module, nn.ModuleList):
-            # 递归处理嵌套结构
             inject_lora_to_encoder(module, r, alpha)
-        # 激活函数
         else:
             continue
     return model

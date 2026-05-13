@@ -34,7 +34,6 @@ class Trainer(object):
         self.alpha = model_config['alpha']
 
     # #     -----
-    # #     正则强度
     #     self.l1_lambda = 1e-5
 
 
@@ -52,7 +51,6 @@ class Trainer(object):
                 x_pred, z, masks, z_x, z_x_pred = self.model(x_input)
                 loss, mse, divloss, ssl_loss = self.loss_fuc(x_input, x_pred, masks, z_x, z_x_pred)
 
-                # # 添加L1惩罚，仅用作Encoder层权重
                 # l1_reg = sum(torch.norm(p, 1) for n, p in self.model.encoder.named_parameters() if 'weight' in n)
                 # final_loss = loss + self.l1_lambda * l1_reg
 
@@ -93,17 +91,14 @@ class Trainer(object):
         model.to(self.device)
         # ----
         model.train()
-        # 2. 注入 LoRA 仅到 Encoder
         model = inject_lora_to_encoder(model, r=self.r, alpha=self.alpha)
         model.to(self.device)
-        # # 加载已有LoRA参数（如果存在）
         # lora_path = f'./lora_weights/{self.dataset_name}_run{self.run}.pt'
         # if os.path.exists(lora_path):
         #     print(f"[LoRA] Loading LoRA adapter from {lora_path}")
         #     lora_weights = torch.load(lora_path)
         #     model.load_state_dict(lora_weights, strict=False)
 
-        # 4. 优化器只更新 LoRA 参数
         optimizer = torch.optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()),
             lr=self.learning_rate,
@@ -111,7 +106,6 @@ class Trainer(object):
         )
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.sche_gamma)
 
-        # 根据测试集中的正常/异常总数量，设置每次基于置信度选择的正常/异常数量
         normal_num = (test_data.targets == 0).sum()
         abnormal_num = (test_data.targets == 1).sum()
         ratio = int(normal_num/abnormal_num)
@@ -119,15 +113,12 @@ class Trainer(object):
         select_normal_num = int(ratio*select_abnormal_num)+1
         # print(f'In each iteration, select_abnormal_num={select_abnormal_num}, select_normal_num={select_normal_num}')
 
-        # 设置每次选择的样本数量, 当剩余样本数量不足以执行下一轮选择时，对比调整停止
         target_size = select_abnormal_num + select_normal_num
         score = np.squeeze(error_score).tolist()
         remain_index = [i for i in range(len(score))]
 
-        # 运行MMD检验
         detector = MMDTestVisualizer(num_permutations=500, device=self.device)
 
-        # 基于置信度和污染率得到测试集正常样本
         min_score, max_score = min(score), max(score)
         norm_score = [(score[i] - min_score) / (max_score - min_score) for i in range(len(score))]
         sorted_norm_score_index = np.argsort(norm_score)
@@ -140,13 +131,11 @@ class Trainer(object):
 
         def iter_optim(score, remain_index, train_data, test_data):
 
-            # 2. 根据重构损失得到的异常概率，选择本轮待处理的正常和异常
             min_score, max_score = min(score), max(score)
             norm_score = [(score[i] - min_score) / (max_score - min_score) for i in range(len(score))]
             sorted_norm_score_index = np.argsort(norm_score)
             # print(f'remain_index len {len(remain_index)}, norm_score len {len(norm_score)}')
 
-            # 列出本轮选择的正常/异常索引
             input_normal_index = [remain_index[i] for i in sorted_norm_score_index[:select_normal_num]]
             input_abnormal_index = [remain_index[i] for i in sorted_norm_score_index[-select_abnormal_num:]]
             input_index = input_normal_index + input_abnormal_index
@@ -189,7 +178,6 @@ class Trainer(object):
                     # contrastive_loss = torch.norm(z_abnormal_expand - nearest_embeddings, dim=2).mean()
 
                     # final_loss = - (loss + contrastive_loss)
-                    # 添加L1惩罚，仅用作Encoder层权重
                     # l1_reg = sum(torch.norm(p, 1) for n, p in self.model.encoder.named_parameters() if 'weight' in n)
 
                     final_loss = -loss
@@ -221,7 +209,6 @@ class Trainer(object):
         iter_optim(score, remain_index, train_data, test_data)
         # iter_optim(score, remain_index, test_data)
 
-        # # 保存微调后的参数
         # os.makedirs('./lora_weights', exist_ok=True)
         # lora_state_dict = {k: v for k, v in model.state_dict().items() if 'lora' in k}
         # torch.save(lora_state_dict, f'./lora_weights/{self.dataset_name}_run{self.run}.pt')
@@ -248,4 +235,3 @@ class Trainer(object):
         mse_f1[self.run] = F1Performance(mse_score, test_label)
 
         return mse_score, test_label, self.train_set, self.test_set
-

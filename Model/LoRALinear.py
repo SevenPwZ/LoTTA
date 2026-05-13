@@ -11,14 +11,12 @@ class LoRALinear(nn.Module):
         self.alpha = alpha
         self.scale = alpha / r
 
-        # 冻结主干权重
         if pretrained_weight is not None:
             self.weight = nn.Parameter(pretrained_weight.clone(), requires_grad=False)
         else:
             self.weight = nn.Parameter(torch.empty(out_features, in_features), requires_grad=False)
             nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
-        # LoRA 参数
         self.lora_A = nn.Linear(in_features, r, bias=False)
         self.lora_B = nn.Linear(r, out_features, bias=False)
         nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
