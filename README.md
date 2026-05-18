@@ -1,6 +1,6 @@
 # LoTTA: Low-rank Test-time Adaptation for Unsupervised Tabular Anomaly Detection
 
-The code of paper "LoTTA: Low-rank Test-time Adaptation for Unsupervised Tabular Anomaly Detection"
+The code of paper "LoTTA: Low-rank Test-time Adaptation for Unsupervised Tabular Anomaly Detection"，[Information Processing & Management, IPM 2026](https://authors.elsevier.com/a/1n6F%7E15hYe3Y9-)
 
 This repository is not yet completed, so please check this as a reference only.
 ## Prepare dataset
